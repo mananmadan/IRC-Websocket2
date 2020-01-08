@@ -1,16 +1,31 @@
 import asyncio
 import websockets
+import serial
+import syslog
+import time
 
-async def hello(websocket, path):
-    name = await websocket.recv()
-    print(f"< {name}")
+port = '/dev/ttyUSB1'
+ard = serial.Serial(port,9600,timeout=5)
 
-    greeting = f"Hello {name}!"
+import asyncio
+import websockets
 
-    await websocket.send(greeting)
-    print(f"> {greeting}")
+async def echo(websocket, path):
+    while True:
+        try:
+            # print("here")
+            b = ard.readline()  # read a byte string
+            string_n = b.decode()  # decode byte string into Unicode
+            string = string_n.rstrip()  # remove \n and \r
+            readings = string.split(",")
+            if len(readings[0]) != 19:
+                continue
+            # print(readings)
+            await websocket.send(readings[0])
+        except websockets.ConnectionClosed:
+            print("connection broken")
+            break
 
-start_server = websockets.serve(hello, "localhost", 8765)
-
-asyncio.get_event_loop().run_until_complete(start_server)
+asyncio.get_event_loop().run_until_complete(
+websockets.serve(echo, 'localhost', 8765))
 asyncio.get_event_loop().run_forever()
