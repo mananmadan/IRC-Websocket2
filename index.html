@@ -22,33 +22,22 @@
 </head>
 <body>
  <label>
-     <input type="text" name="ip">
-        <input type="checkbox"
+     <!--<input type="text" name="ip">-->
+        <!--<input type="checkbox"-->
 
-        name="shouldConnect"/>
-           Listen to coordinates? </label>
+        <!--name="shouldConnect"/>-->
+           <!--Listen to coordinates? </label>-->
 <div id="map"></div>
 <script>
 
     window.specialPoints = [];
-    // var checkbox = document.querySelector("input[name=checkbox]");
-    // window.receiveMsg = false;
-    // checkbox.addEventListener( 'change', function() {
-    //     if(this.checked) {
-    //         // Checkbox is checked..
-    //         window.receiveMsg = true;
-    //     } else {
-    //         // Checkbox is not checked..
-    //         window.receiveMsg = false;
-    //     }
-    // });
 
 
     var map;
     function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {
             center: {lat: 28.611691, lng: 77.034347},
-            zoom: 12
+            zoom: 16
         });
         var numPoints = window.prompt("Enter Number of Special Points");
         for (var i = 1; i <= numPoints; i++) {
@@ -65,18 +54,6 @@
                 }
             });
         }
-
-
-        // var marker1 = new google.maps.Marker({
-        //     position: {lat: 28.611691, lng: 77.034347},
-        //     map: map,
-        //     title: 'Hello World!'
-        // });
-        // var marker2 = new google.maps.Marker({
-        //     position: {lat: 28.620413, lng:  77.021392},
-        //     map: map,
-        //     title: 'Hello World!'
-        // });
         var roverPositions = [];
         var roverPositionsPath = new google.maps.Polyline({
             path: roverPositions,
@@ -92,68 +69,34 @@
                 map: map
             });
         }
-
+        //
         roverPositionsPath.setMap(map);
 
-        var arr = [
-            [28.634617, 77.127633],
-            [28.6769833333333, 77.1889],
-            [28.657233, 77.14125],
-            [28.674998, 77.188525],
-            [28.630683, 77.124267],
-            [28.671267, 77.176283],
-            [28.668, 77.164283],
-            [28.6714, 77.1672],
-            [28.628, 77.1107],
-            [28.709067, 77.226233],
-            [28.670231, 77.181136],
-            [28.654783, 77.136667],
-            [28.695844, 77.216119],
-            [28.694883, 77.209683],
-            [28.658867, 77.144183],
-            [28.63685, 77.12835],
-            [28.707017, 77.223917],
-            [28.684821, 77.203792],
-            [28.6252, 77.1108],
-            [28.6393, 77.1337],
-            [28.6712, 77.18405],
-            [28.700902, 77.218632],
-            [28.6923, 77.2083],
-            [28.646715, 77.1409],
-            [28.6961333333333, 77.2122666666667],
-            [28.63145, 77.111967],
-            [28.67305, 77.186467],
-            [28.6513, 77.1409],
-            [28.706, 77.2211],
-            [28.6309, 77.1196],
-            [28.6717, 77.1732],
-            [28.6842833333333, 77.2023166666667],
-            [28.711517, 77.222267],
-            [28.665367, 77.159933],
-            [28.6628, 77.1535],
-            [28.6865, 77.205567],
-            [28.660583, 77.147367]
-        ];
+        var arr = [];
         window.count = -1;
-        setInterval(function(){
-            // console.log("position received");
-            // To be changed completely
-            count++;
-            var coordinates = arr[count];
+        var ip = window.prompt("Enter IP address of gps transmitter");
+        var socket = new WebSocket(`ws://${ip}:8765`);
+        socket.onmessage = function (event) {
+                count++;
+            // var coordinates = arr[count];
             // roverPositionsPath.setMap(map);
+            // event.data.split()
+            roverLat = parseFloat(event.data.split(" ")[0])
+            roverLon = parseFloat(event.data.split(" ")[1])
+            console.log(roverLat, roverLon);
             new google.maps.Marker({
                 position: {
-                    lat: coordinates[0],
-                    lng: coordinates[1]
+                    lat: roverLat,
+                    lng: roverLon
                 },
                 map: map
             });
-            var path = roverPositionsPath.getPath()
-            console.log(path);
-            path.push(new google.maps.LatLng(coordinates[0], coordinates[1]));
-            roverPositionsPath.setPath(path);
 
-        }, 1000)
+            var path = roverPositionsPath.getPath()
+            // console.log(path);
+            path.push(new google.maps.LatLng(roverLat, roverLon));
+            roverPositionsPath.setPath(path);
+            };
 
     }
 
