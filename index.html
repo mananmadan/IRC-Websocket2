@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
     <title>Simple Map</title>
@@ -38,12 +38,24 @@
             center: {lat: 28.611691, lng: 77.034347},
             zoom: 16
         });
+
+        var special = [];
+
+        //for (var i = 1; i <= 55; i++) {
+        //    special[i] = [];
+        //}
+        var j = 1;
         var numPoints = window.prompt("Enter Number of Special Points");
         for (var i = 1; i <= numPoints; i++) {
             var pointi = window.prompt(`Enter Lat, Lon, Title of ${i}th point (ex - 28.611691 77.034347 startPos)`);
             var coords = pointi.split(" ");
             console.log(coords);
+            special[j] = parseFloat(coords[0]);
+            special[++j] = parseFloat(coords[1]);
+            j++;
+            
             window.specialPoints.push(coords);
+            //prints blue markers
             new google.maps.Marker({
                 position: {lat: parseFloat(coords[0]), lng:  parseFloat(coords[1])},
                 map: map,
@@ -53,6 +65,29 @@
                 }
             });
         }
+
+        var specialPath = new google.maps.Polyline({
+            path: [],
+            geodesic: true,
+            strokeColor: '#0000FF',
+            strokeOpacity: 1.0,
+            strokeWeight: 2
+
+        });
+
+        specialPath.setMap(map);
+        var spath;
+
+        for (var j = parseInt('1') ; j !== (2 * numPoints) + 1; j += 2) {
+            spath = specialPath.getPath();
+            
+            console.log(special[j]);
+            console.log(spath);
+            spath.push(new google.maps.LatLng(parseFloat(special[j]), parseFloat(special[j + 1])));
+
+        }
+
+
         var roverPositions = [];
         var roverPositionsPath = new google.maps.Polyline({
             path: roverPositions,
@@ -61,41 +96,58 @@
             strokeOpacity: 1.0,
             strokeWeight: 2
         });
-
+        
+        //prints red markers
         for (i = 0; i < roverPositions.length; i++) {
             var marker = new google.maps.Marker({
                 position: roverPositions[i],
                 map: map
             });
         }
-        //
+
         roverPositionsPath.setMap(map);
+       
+
 
         var arr = [];
         window.count = -1;
         var ip = window.prompt("Enter IP address of gps transmitter");
-        var socket = new WebSocket(`ws://${ip}:8765`);
-        socket.onmessage = function (event) {
-                count++;
-            // var coordinates = arr[count];
-            // roverPositionsPath.setMap(map);
-            // event.data.split()
-            roverLat = parseFloat(event.data.split(" ")[0])
-            roverLon = parseFloat(event.data.split(" ")[1])
-            console.log(roverLat, roverLon);
-            new google.maps.Marker({
-                position: {
-                    lat: roverLat,
-                    lng: roverLon
-                },
-                map: map
-            });
 
-            var path = roverPositionsPath.getPath()
-            // console.log(path);
-            path.push(new google.maps.LatLng(roverLat, roverLon));
-            roverPositionsPath.setPath(path);
+        function connect() {
+
+            var socket = new WebSocket(`ws://${ip}:8765`);
+            socket.onmessage = function (event) {
+                count++;
+                // var coordinates = arr[count];
+                // roverPositionsPath.setMap(map);
+                // event.data.split()
+                roverLat = parseFloat(event.data.split(" ")[0])
+                roverLon = parseFloat(event.data.split(" ")[1])
+                console.log(roverLat, roverLon);
+                new google.maps.Marker({
+                    position: {
+                        lat: roverLat,
+                        lng: roverLon
+                    },
+                    map: map
+                });
+
+                var path = roverPositionsPath.getPath();
+                // console.log(path);
+                path.push(new google.maps.LatLng(roverLat, roverLon));
+                roverPositionsPath.setPath(path);
             };
+            socket.onclose = function (e) {
+                console.log("socket is closed ... reconnecting");
+                setTimeout(function () { connect(); }, 1000);
+            };
+            socket.onerror = function (err) {
+                console.error('encountered error:', err.message, 'closing socket');
+                socket.close();
+
+            };
+        }
+        connect();
 
     }
 
